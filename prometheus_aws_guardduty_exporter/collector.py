@@ -42,7 +42,7 @@ class GuardDutyMetricsCollector():
                 logging.getLogger().error(f"Unable to scrape GuardDuty statistics from {region} because of error: {str(error)}")
 
                 # Increase the errors count
-                self.scrapeErrorsMetric.labels(region).inc();
+                self.scrapeErrorsMetric.labels(region).inc()
 
         return [currentFindingsMetric]
 
@@ -57,7 +57,7 @@ class GuardDutyMetricsCollector():
         for detectorId in detectorIds:
             countBySeverity = client.get_findings_statistics(
                 DetectorId=detectorId,
-                FindingCriteria={"Criterion":{"service.archived":{"Eq":["false"]}}},
+                FindingCriteria={"Criterion": {"service.archived": {"Eq": ["false"]}}},
                 FindingStatisticTypes=["COUNT_BY_SEVERITY"])["FindingStatistics"]["CountBySeverity"]
 
             for severity, count in countBySeverity.items():

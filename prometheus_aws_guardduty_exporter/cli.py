@@ -34,18 +34,11 @@ def main(args):
     logger.setLevel(args.log_level)
 
     # Register signal handler
-    def _on_sighup(signal, frame):
-        if args.log_file is not "stdout":
-            logging.getLogger().info("Received SIGHUP - log file is closing")
-            logHandler.close()
-            logging.getLogger().info("Received SIGHUP - log file has been re-opened")
-
     def _on_sigterm(signal, frame):
         logging.getLogger().info("Exporter is shutting down")
         nonlocal shutdown
         shutdown = True
 
-    signal.signal(signal.SIGHUP, _on_sighup)
     signal.signal(signal.SIGINT, _on_sigterm)
     signal.signal(signal.SIGTERM, _on_sigterm)
 
