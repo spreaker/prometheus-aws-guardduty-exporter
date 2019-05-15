@@ -44,6 +44,28 @@ The cli supports the following arguments:
 | `--log-level LOG_LEVEL`        |          | Minimum log level. Accepted values are: `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`. Defaults to `INFO` |
 
 
+## Required IAM privileges
+
+In order to successfully run, this application requires the following IAM privileges:
+
+```
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid":    "ListDetectorsAndGetFindingsStatisticsInAnyRegion",
+      "Effect": "Allow",
+      "Action": [
+        "guardduty:ListDetectors",
+        "guardduty:GetFindingsStatistics"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+```
+
+
 ## Development
 
 Run the development environment:
