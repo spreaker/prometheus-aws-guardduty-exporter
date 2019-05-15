@@ -20,6 +20,20 @@ The exporter exports the following metrics:
 
 ## How to run it
 
+You have two options to run it:
+
+1. Manually install and run the [`prometheus-aws-guardduty-exporter` Python package](https://pypi.org/project/prometheus-aws-guarddyty-exporter/)
+   ```
+   pip3 install prometheus-aws-guardduty-exporter
+
+   prometheus-aws-guardduty-exporter --region us-east-1
+   ```
+
+2. Use the [Docker image available on Docker hub](https://hub.docker.com/r/spreaker/prometheus-aws-guardduty-exporter/)
+   ```
+   docker run --env AWS_ACCESS_KEY_ID="id" --env AWS_SECRET_ACCESS_KEY="secret" spreaker/prometheus-aws-guardduty-exporter --region us-east-1
+   ```
+
 The cli supports the following arguments:
 
 | Argument                       | Required | Description |
