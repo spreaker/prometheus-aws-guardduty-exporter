@@ -22,7 +22,7 @@ The exporter exports the following metrics:
 
 You have two options to run it:
 
-1. Manually install and run the [`prometheus-aws-guardduty-exporter` Python package](https://pypi.org/project/prometheus-aws-guarddyty-exporter/)
+1. Manually install and run the [`prometheus-aws-guardduty-exporter` Python package](https://pypi.org/project/prometheus-aws-guardduty-exporter/)
    ```
    pip3 install prometheus-aws-guardduty-exporter
 
