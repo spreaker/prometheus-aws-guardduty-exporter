@@ -2,30 +2,25 @@ import logging
 import boto3
 import botocore
 from typing import List
-from prometheus_client import Counter
-from prometheus_client.core import GaugeMetricFamily
+from prometheus_client.core import GaugeMetricFamily, CounterMetricFamily
 
 
 class GuardDutyMetricsCollector():
     def __init__(self, regions: List[str]):
         self.regions = regions
-
-        # Init a metric used to keep the count of errors while
-        # fetching statistics from GuardDuty
-        self.scrapeErrorsMetric = Counter(
-            "aws_guardduty_scrape_errors_total",
-            "The total number of scrape errors",
-            labelnames=["region"])
-
-        for region in regions:
-            self.scrapeErrorsMetric.labels(region).inc(amount=0)
+        self.scrapeErrors = {region: 0 for region in regions}
 
     def collect(self):
-        # Reset findings metric
+        # Init metrics
         currentFindingsMetric = GaugeMetricFamily(
             "aws_guardduty_current_findings",
             "The current number of unarchived findings",
             labels=["region", "severity"])
+
+        scrapeErrorsMetric = CounterMetricFamily(
+            "aws_guardduty_scrape_errors_total",
+            "The total number of scrape errors",
+            labels=["region"])
 
         # Customize the boto client config
         botoConfig = botocore.client.Config(connect_timeout=2, read_timeout=10, retries={"max_attempts": 2})
@@ -42,9 +37,13 @@ class GuardDutyMetricsCollector():
                 logging.getLogger().error(f"Unable to scrape GuardDuty statistics from {region} because of error: {str(error)}")
 
                 # Increase the errors count
-                self.scrapeErrorsMetric.labels(region).inc()
+                self.scrapeErrors[region] += 1
 
-        return [currentFindingsMetric]
+        # Update the scrape errors metric
+        for region, errorsCount in self.scrapeErrors.items():
+            scrapeErrorsMetric.add_metric(value=errorsCount, labels=[region])
+
+        return [currentFindingsMetric, scrapeErrorsMetric]
 
     def _collectMetricsByRegion(self, region, botoConfig):
         client = boto3.client("guardduty", config=botoConfig, region_name=region)
