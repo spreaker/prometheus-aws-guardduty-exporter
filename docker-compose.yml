@@ -1,0 +1,11 @@
+version: "3"
+
+services:
+  dev:
+    build:
+      context:    .
+      dockerfile: Dockerfile-dev
+    command: [ "sh" ]
+    volumes:
+      - .:/app:delegated
+      - ~/.aws:/home/app/.aws:ro
