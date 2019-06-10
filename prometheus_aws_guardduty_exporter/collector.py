@@ -1,6 +1,7 @@
 import logging
 import boto3
 import botocore
+import threading
 from typing import List
 from prometheus_client.core import GaugeMetricFamily, CounterMetricFamily
 
@@ -9,6 +10,25 @@ class GuardDutyMetricsCollector():
     def __init__(self, regions: List[str]):
         self.regions = regions
         self.scrapeErrors = {region: 0 for region in regions}
+        self.botoConfig = None
+        self.lock = threading.Lock()
+
+    def scrape_metric_in_region(self, metric, region):
+        try:
+            # Scrape GuardDuty statistics from the region
+            regionStats = self._collectMetricsByRegion(region)
+            # Add the findings to the exporterd metric
+            for severity, count in regionStats.items():
+                self.lock.acquire()
+                try:
+                    metric.add_metric(value=count, labels=[region, severity])
+                finally:
+                    self.lock.release()
+        except Exception as error:
+            logging.getLogger().error(f"Unable to scrape GuardDuty statistics from {region} because of error: {str(error)}")
+
+            # Increase the errors count
+            self.scrapeErrors[region] += 1
 
     def collect(self):
         # Init metrics
@@ -23,21 +43,19 @@ class GuardDutyMetricsCollector():
             labels=["region"])
 
         # Customize the boto client config
-        botoConfig = botocore.client.Config(connect_timeout=2, read_timeout=10, retries={"max_attempts": 2})
+        self.botoConfig = botocore.client.Config(connect_timeout=2, read_timeout=10, retries={"max_attempts": 2})
 
+        threads = []
         for region in self.regions:
-            try:
-                # Scrape GuardDuty statistics from the region
-                regionStats = self._collectMetricsByRegion(region, botoConfig)
+            # We start one thread per region.
+            process = threading.Thread(target=self.scrape_metric_in_region, args=[currentFindingsMetric, region])
+            threads.append(process)
 
-                # Add the findings to the exporterd metric
-                for severity, count in regionStats.items():
-                    currentFindingsMetric.add_metric(value=count, labels=[region, severity])
-            except Exception as error:
-                logging.getLogger().error(f"Unable to scrape GuardDuty statistics from {region} because of error: {str(error)}")
+        for process in threads:
+            process.start()
 
-                # Increase the errors count
-                self.scrapeErrors[region] += 1
+        for process in threads:
+            process.join()
 
         # Update the scrape errors metric
         for region, errorsCount in self.scrapeErrors.items():
@@ -45,8 +63,8 @@ class GuardDutyMetricsCollector():
 
         return [currentFindingsMetric, scrapeErrorsMetric]
 
-    def _collectMetricsByRegion(self, region, botoConfig):
-        client = boto3.client("guardduty", config=botoConfig, region_name=region)
+    def _collectMetricsByRegion(self, region):
+        client = boto3.client("guardduty", config=self.botoConfig, region_name=region)
         regionStats = {"low": 0, "medium": 0, "high": 0}
 
         # List GuardDuty detectors
