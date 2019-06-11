@@ -11,6 +11,7 @@ class GuardDutyMetricsCollector():
         self.regions = regions
         self.botoConfig = botocore.client.Config(connect_timeout=2, read_timeout=10, retries={"max_attempts": 2})
         self.pool = Pool(len(self.regions))
+        self.scrapeErrors = {region: 0 for region in regions}
 
     def collect(self):
         # Init metrics
@@ -26,8 +27,8 @@ class GuardDutyMetricsCollector():
 
         results = [self.pool.apply_async(self._collectMetricsByRegion, [region]) for region in self.regions]
         for result in results:
-            region, regionStats, scrapeErrors = result.get()
-            scrapeErrorsMetric.add_metric(value=scrapeErrors, labels=[region])
+            region, regionStats = result.get()
+            scrapeErrorsMetric.add_metric(value=self.scrapeErrors[region], labels=[region])
             for severity, count in regionStats.items():
                 currentFindingsMetric.add_metric(value=count, labels=[region, severity])
 
@@ -36,7 +37,6 @@ class GuardDutyMetricsCollector():
     def _collectMetricsByRegion(self, region):
         client = boto3.client("guardduty", config=self.botoConfig, region_name=region)
         regionStats = {"low": 0, "medium": 0, "high": 0}
-        scrapeErrors = 0
 
         try:
             # List GuardDuty detectors
@@ -64,9 +64,9 @@ class GuardDutyMetricsCollector():
             logging.getLogger().error(f"Unable to scrape GuardDuty statistics from {region} because of error: {str(error)}")
 
             # Increase the errors count
-            scrapeErrors = 1
+            self.scrapeErrors[region] += 1
 
             # Do not return regionStats or they could be 0 and be a false positive
             regionStats = {}
 
-        return (region, regionStats, scrapeErrors)
+        return (region, regionStats)
