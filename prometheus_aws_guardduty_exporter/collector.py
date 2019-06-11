@@ -10,6 +10,7 @@ class GuardDutyMetricsCollector():
     def __init__(self, regions: List[str]):
         self.regions = regions
         self.botoConfig = botocore.client.Config(connect_timeout=2, read_timeout=10, retries={"max_attempts": 2})
+        self.pool = Pool(len(self.regions))
 
     def collect(self):
         # Init metrics
@@ -23,9 +24,7 @@ class GuardDutyMetricsCollector():
             "The total number of scrape errors",
             labels=["region"])
 
-        pool = Pool(len(self.regions))
-        results = [pool.apply_async(self._collectMetricsByRegion, [region]) for region in self.regions]
-        # results = pool.apply_async(self._collectMetricsByRegion, [region])
+        results = [self.pool.apply_async(self._collectMetricsByRegion, [region]) for region in self.regions]
         for result in results:
             region, regionStats, scrapeErrors = result.get()
             scrapeErrorsMetric.add_metric(value=scrapeErrors, labels=[region])
