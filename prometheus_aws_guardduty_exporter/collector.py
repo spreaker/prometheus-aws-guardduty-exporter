@@ -28,9 +28,13 @@ class GuardDutyMetricsCollector():
         results = [self.pool.apply_async(self._collectMetricsByRegion, [region]) for region in self.regions]
         for result in results:
             region, regionStats = result.get()
+            if not regionStats:
+                self.scrapeErrors[region] += 1
+            else:
+                for severity, count in regionStats.items():
+                    currentFindingsMetric.add_metric(value=count, labels=[region, severity])
+
             scrapeErrorsMetric.add_metric(value=self.scrapeErrors[region], labels=[region])
-            for severity, count in regionStats.items():
-                currentFindingsMetric.add_metric(value=count, labels=[region, severity])
 
         return [currentFindingsMetric, scrapeErrorsMetric]
 
@@ -63,10 +67,7 @@ class GuardDutyMetricsCollector():
         except Exception as error:
             logging.getLogger().error(f"Unable to scrape GuardDuty statistics from {region} because of error: {str(error)}")
 
-            # Increase the errors count
-            self.scrapeErrors[region] += 1
-
-            # Do not return regionStats or they could be 0 and be a false positive
-            regionStats = {}
+            # We return False on error so we can increase the errors_total metric
+            regionStats = False
 
         return (region, regionStats)
