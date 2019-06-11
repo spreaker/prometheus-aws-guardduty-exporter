@@ -237,3 +237,48 @@ class TestGuardDutyMetricsCollector(unittest.TestCase):
         self.assertEqual(scrapeErrorsMetric.samples[1].labels, {"region": "us-east-1"})
 
         self.gdStubber.assert_no_pending_responses()
+
+    def testCollectShouldNeverDecreaseScrapeErrorsOnSubsequentCalls(self):
+        # Mock GuardDuty
+        self.gdStubber.add_response(
+            "list_detectors",
+            {"DetectorIds": ["us-detector-1"]},
+            {})
+
+        self.gdStubber.add_client_error("get_findings_statistics")
+
+        # Collect metrics
+        with patch("boto3.client", side_effect=self.botoClientMock):
+            collector = GuardDutyMetricsCollector(regions=["us-east-1"])
+            metrics = collector.collect()
+
+        findingsMetric = metrics[0]
+        self.assertEqual(findingsMetric.name, "aws_guardduty_current_findings")
+        self.assertEqual(findingsMetric.type, "gauge")
+        self.assertEqual(len(findingsMetric.samples), 0)
+
+        scrapeErrorsMetric = metrics[1]
+        self.assertEqual(scrapeErrorsMetric.name, "aws_guardduty_scrape_errors")
+        self.assertEqual(scrapeErrorsMetric.type, "counter")
+        self.assertEqual(len(scrapeErrorsMetric.samples), 1)
+
+        self.assertEqual(scrapeErrorsMetric.samples[0].value, 1)
+        self.assertEqual(scrapeErrorsMetric.samples[0].labels, {"region": "us-east-1"})
+
+        with patch("boto3.client", side_effect=self.botoClientMock):
+            metrics = collector.collect()
+
+        findingsMetric = metrics[0]
+        self.assertEqual(findingsMetric.name, "aws_guardduty_current_findings")
+        self.assertEqual(findingsMetric.type, "gauge")
+        self.assertEqual(len(findingsMetric.samples), 0)
+
+        scrapeErrorsMetric = metrics[1]
+        self.assertEqual(scrapeErrorsMetric.name, "aws_guardduty_scrape_errors")
+        self.assertEqual(scrapeErrorsMetric.type, "counter")
+        self.assertEqual(len(scrapeErrorsMetric.samples), 1)
+
+        self.assertEqual(scrapeErrorsMetric.samples[0].value, 2)
+        self.assertEqual(scrapeErrorsMetric.samples[0].labels, {"region": "us-east-1"})
+
+        self.gdStubber.assert_no_pending_responses()
