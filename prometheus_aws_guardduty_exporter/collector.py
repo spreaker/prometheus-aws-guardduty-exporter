@@ -9,7 +9,6 @@ from prometheus_client.core import GaugeMetricFamily, CounterMetricFamily
 class GuardDutyMetricsCollector():
     def __init__(self, regions: List[str]):
         self.regions = regions
-        self.botoConfig = botocore.client.Config(connect_timeout=2, read_timeout=10, retries={"max_attempts": 2})
         self.pool = Pool(len(self.regions))
         self.scrapeErrors = {region: 0 for region in regions}
 
@@ -39,7 +38,8 @@ class GuardDutyMetricsCollector():
         return [currentFindingsMetric, scrapeErrorsMetric]
 
     def _collectMetricsByRegion(self, region):
-        client = boto3.client("guardduty", config=self.botoConfig, region_name=region)
+        botoConfig = botocore.client.Config(connect_timeout=2, read_timeout=10, retries={"max_attempts": 2})
+        client = boto3.client("guardduty", config=botoConfig, region_name=region)
         regionStats = {"low": 0, "medium": 0, "high": 0}
 
         try:
