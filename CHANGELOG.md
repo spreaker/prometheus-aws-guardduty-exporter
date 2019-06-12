@@ -1,5 +1,8 @@
 # Changelog
 
+### 1.1.1 (2019-06-12)
+- Release 1.1.1 that fixes multithreading issue with boto3 client
+
 ### (2019-06-12)
 - Fixed boto3 multithreading use
 
