@@ -11,7 +11,6 @@ class GuardDutyMetricsCollector():
         self.regions = regions
         self.pool = Pool(len(self.regions))
         self.scrapeErrors = {region: 0 for region in regions}
-        self.botoClients = {}
 
     def collect(self):
         # Init metrics
