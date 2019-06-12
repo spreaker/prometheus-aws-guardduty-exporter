@@ -11,8 +11,8 @@ class TestGuardDutyMetricsCollector(unittest.TestCase):
         self.gdStubber = Stubber(self.gdClient)
         self.gdStubber.activate()
 
-        self.botoClientMock = MagicMock()
-        self.botoClientMock.return_value = self.gdClient
+        self.botoSessionMock = MagicMock()
+        self.botoSessionMock.client.return_value = self.gdClient
 
     def testCollectShouldReturnCurrentFindingsMetricFromSingleRegionWithSingleDetectorOnSuccess(self):
         # Mock GuardDuty
@@ -33,7 +33,7 @@ class TestGuardDutyMetricsCollector(unittest.TestCase):
             {"DetectorId": "eu-detector-1", "FindingCriteria": {"Criterion": {"service.archived": {"Eq": ["false"]}}}, "FindingStatisticTypes": ["COUNT_BY_SEVERITY"]})
 
         # Collect metrics
-        with patch("boto3.client", side_effect=self.botoClientMock):
+        with patch("boto3.session.Session", return_value=self.botoSessionMock):
             collector = GuardDutyMetricsCollector(regions=["eu-west-1"])
             metrics = collector.collect()
 
@@ -89,7 +89,7 @@ class TestGuardDutyMetricsCollector(unittest.TestCase):
             {"DetectorId": "eu-detector-2", "FindingCriteria": {"Criterion": {"service.archived": {"Eq": ["false"]}}}, "FindingStatisticTypes": ["COUNT_BY_SEVERITY"]})
 
         # Collect metrics
-        with patch("boto3.client", side_effect=self.botoClientMock):
+        with patch("boto3.session.Session", return_value=self.botoSessionMock):
             collector = GuardDutyMetricsCollector(regions=["eu-west-1"])
             metrics = collector.collect()
 
@@ -150,7 +150,7 @@ class TestGuardDutyMetricsCollector(unittest.TestCase):
             {"DetectorId": "us-detector-1", "FindingCriteria": {"Criterion": {"service.archived": {"Eq": ["false"]}}}, "FindingStatisticTypes": ["COUNT_BY_SEVERITY"]})
 
         # Collect metrics
-        with patch("boto3.client", side_effect=self.botoClientMock):
+        with patch("boto3.session.Session", return_value=self.botoSessionMock):
             collector = GuardDutyMetricsCollector(regions=["eu-west-1", "us-east-1"])
             metrics = collector.collect()
 
@@ -210,7 +210,7 @@ class TestGuardDutyMetricsCollector(unittest.TestCase):
             {"DetectorId": "us-detector-1", "FindingCriteria": {"Criterion": {"service.archived": {"Eq": ["false"]}}}, "FindingStatisticTypes": ["COUNT_BY_SEVERITY"]})
 
         # Collect metrics
-        with patch("boto3.client", side_effect=self.botoClientMock):
+        with patch("boto3.session.Session", return_value=self.botoSessionMock):
             collector = GuardDutyMetricsCollector(regions=["eu-west-1", "us-east-1"])
             metrics = collector.collect()
 
@@ -248,7 +248,7 @@ class TestGuardDutyMetricsCollector(unittest.TestCase):
         self.gdStubber.add_client_error("get_findings_statistics")
 
         # Collect metrics
-        with patch("boto3.client", side_effect=self.botoClientMock):
+        with patch("boto3.session.Session", return_value=self.botoSessionMock):
             collector = GuardDutyMetricsCollector(regions=["us-east-1"])
             metrics = collector.collect()
 
@@ -265,7 +265,7 @@ class TestGuardDutyMetricsCollector(unittest.TestCase):
         self.assertEqual(scrapeErrorsMetric.samples[0].value, 1)
         self.assertEqual(scrapeErrorsMetric.samples[0].labels, {"region": "us-east-1"})
 
-        with patch("boto3.client", side_effect=self.botoClientMock):
+        with patch("boto3.session.Session", return_value=self.botoSessionMock):
             metrics = collector.collect()
 
         findingsMetric = metrics[0]

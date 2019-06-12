@@ -1,5 +1,8 @@
 # Changelog
 
+### (2019-06-12)
+- Use one boto3 session per thread
+
 ### 1.1.1 (2019-06-12)
 - Release 1.1.1 that fixes multithreading issue with boto3 client
 
