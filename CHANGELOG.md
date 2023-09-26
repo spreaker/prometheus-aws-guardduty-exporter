@@ -1,5 +1,9 @@
 # Changelog
 
+### 2.0.0 (2023-09-25)
+- Upgrade to Python 3.11
+- Upgrade dependencies
+
 ### 1.1.2 (2019-06-12)
 - Release 1.1.2 that fixes multithreading sessions with boto3 client
 
