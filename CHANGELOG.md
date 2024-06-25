@@ -1,5 +1,9 @@
 # Changelog
 
+### 3.0.0 (2024-06-25)
+- Optional parameter to assume role
+- Multi-arch docker image
+
 ### 2.0.0 (2023-09-25)
 - Upgrade to Python 3.11
 - Upgrade dependencies

@@ -14,6 +14,7 @@ def parseArguments(argv: List[str]):
     # Parse arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("--region", metavar="REGION", required=True, nargs="+", help="AWS GuardDuty region (can specify multiple space separated regions)")
+    parser.add_argument("--role-arn", required=False, default=None, help="The ARN of an AWS role to assume (optional)")
     parser.add_argument("--exporter-host", required=False, default="127.0.0.1", help="The host at which the Prometheus exporter should listen to")
     parser.add_argument("--exporter-port", required=False, default="9100", type=int, help="The port at which the Prometheus exporter should listen to")
     parser.add_argument("--log-level", help="Minimum log level. Accepted values are: DEBUG, INFO, WARNING, ERROR, CRITICAL", default="INFO")
@@ -44,7 +45,7 @@ def main(args):
 
     # Register our custom collector
     logger.info("Collecting initial metrics")
-    REGISTRY.register(GuardDutyMetricsCollector(args.region))
+    REGISTRY.register(GuardDutyMetricsCollector(args.region, args.role_arn))
 
     # Set the up metric value, which will be steady to 1 for the entire app lifecycle
     upMetric = Gauge(

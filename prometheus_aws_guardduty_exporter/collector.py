@@ -7,8 +7,9 @@ from prometheus_client.core import GaugeMetricFamily, CounterMetricFamily
 
 
 class GuardDutyMetricsCollector():
-    def __init__(self, regions: List[str]):
+    def __init__(self, regions: List[str], roleArn=None):
         self.regions = regions
+        self.roleArn = roleArn
         self.pool = Pool(len(self.regions))
         self.scrapeErrors = {region: 0 for region in regions}
 
@@ -24,7 +25,7 @@ class GuardDutyMetricsCollector():
             "The total number of scrape errors",
             labels=["region"])
 
-        results = [self.pool.apply_async(self._collectMetricsByRegion, [region]) for region in self.regions]
+        results = [self.pool.apply_async(self._collectMetricsByRegion, [region, self.roleArn]) for region in self.regions]
         for result in results:
             region, regionStats = result.get()
             if not regionStats:
@@ -37,9 +38,23 @@ class GuardDutyMetricsCollector():
 
         return [currentFindingsMetric, scrapeErrorsMetric]
 
-    def _collectMetricsByRegion(self, region):
+    def _collectMetricsByRegion(self, region, roleToAssumeArn=None):
         botoConfig = botocore.client.Config(connect_timeout=2, read_timeout=10, retries={"max_attempts": 2})
-        session = boto3.session.Session()
+
+        if roleToAssumeArn is not None:
+            assumeRoleResponse = boto3.client('sts', config=botoConfig, region_name=region).assume_role(
+                RoleArn=roleToAssumeArn,
+                RoleSessionName="GuardDutyExporter",
+                DurationSeconds=900
+            )
+            session = boto3.session.Session(
+                aws_access_key_id=assumeRoleResponse['Credentials']['AccessKeyId'],
+                aws_secret_access_key=assumeRoleResponse['Credentials']['SecretAccessKey'],
+                aws_session_token=assumeRoleResponse['Credentials']['SessionToken']
+            )
+        else:
+            session = boto3.session.Session()
+
         client = session.client("guardduty", config=botoConfig, region_name=region)
         regionStats = {"low": 0, "medium": 0, "high": 0}
 

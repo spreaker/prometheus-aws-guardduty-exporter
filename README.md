@@ -39,6 +39,7 @@ The cli supports the following arguments:
 | Argument                       | Required | Description |
 | ------------------------------ | -------- | ----------- |
 | `--region REGION [REGION ...]` | yes      | AWS GuardDuty region (can specify multiple space separated regions) |
+| `--role-arn`                   |          | The ARN of an AWS role to assume |
 | `--exporter-host`              |          | The host at which the Prometheus exporter should listen to. Defaults to `127.0.0.1` |
 | `--exporter-port`              |          | The port at which the Prometheus exporter should listen to. Defaults to `9100` |
 | `--log-level LOG_LEVEL`        |          | Minimum log level. Accepted values are: `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`. Defaults to `INFO` |
