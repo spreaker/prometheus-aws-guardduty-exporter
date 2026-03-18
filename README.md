@@ -44,6 +44,33 @@ The cli supports the following arguments:
 | `--exporter-port`              |          | The port at which the Prometheus exporter should listen to. Defaults to `9100` |
 | `--log-level LOG_LEVEL`        |          | Minimum log level. Accepted values are: `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`. Defaults to `INFO` |
 
+## Building and pushing to ECR
+
+Prerequisites:
+- Docker installed
+- AWS CLI installed and configured (with `aws_profile=infra-prod`)
+
+Example variables (use your ECR endpoint / repo):
+```
+export AWS_PROFILE=infra-prod
+export AWS_REGION=eu-west-1
+export ECR_REPO=886614085053.dkr.ecr.eu-west-1.amazonaws.com/prometheus-aws-guardduty-exporter
+export ECR_REGISTRY=886614085053.dkr.ecr.eu-west-1.amazonaws.com
+```
+
+1. Login to ECR:
+```
+aws ecr get-login-password --region "$AWS_REGION" --profile "$AWS_PROFILE" \
+  | docker login --username AWS --password-stdin "$ECR_REGISTRY"
+```
+
+2. Build and push (amd64 example):
+```
+docker build -t prometheus-aws-guardduty-exporter:amd64 --build-arg ARCH=amd64/ .
+docker tag prometheus-aws-guardduty-exporter:amd64 "$ECR_REPO:latest"
+docker push "$ECR_REPO:latest"
+```
+
 
 ## Required IAM privileges
 
