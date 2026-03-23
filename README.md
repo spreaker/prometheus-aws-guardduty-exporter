@@ -93,37 +93,6 @@ In order to successfully run, this application requires the following IAM privil
 }
 ```
 
-## Build & Push (Public ECR)
-
-Build the Docker image from this directory, then push it to `public ECR` for `spreaker`.
-
-Public ECR is located in the `infrastructure prod` AWS account so we need to use corresponding AWS Profile.
-
-### Commands example
-
-```sh
-# Make sure you use the infra-prod AWS profile (used for `aws ecr-public login`).
-# Option 1:
-aws ecr-public get-login-password --profile infra-prod --region us-east-1 \
-  | docker login --username AWS --password-stdin public.ecr.aws/spreaker
-
-# Option 2 (equivalent):
-# export AWS_PROFILE=infra-prod
-# aws ecr-public get-login-password --region us-east-1 \
-#   | docker login --username AWS --password-stdin public.ecr.aws/spreaker
-
-# 1) Build
-docker build -t prometheus-aws-guardduty-exporter:3.0.0 .
-
-# 2) Tag
-docker tag prometheus-aws-guardduty-exporter:3.0.0 \
-  public.ecr.aws/spreaker/prometheus-aws-guardduty-exporter:3.0.0
-
-# 3) Push
-docker push public.ecr.aws/spreaker/prometheus-aws-guardduty-exporter:3.0.0
-```
-
-
 ## Development
 
 Run the development environment:
