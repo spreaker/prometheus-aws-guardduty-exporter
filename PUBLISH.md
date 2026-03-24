@@ -25,9 +25,14 @@
    ```
    docker tag prometheus-aws-guardduty-exporter:REPLACE-VERSION \
      public.ecr.aws/spreaker/prometheus-aws-guardduty-exporter:REPLACE-VERSION
+
+   docker tag prometheus-aws-guardduty-exporter:REPLACE-VERSION \
+     public.ecr.aws/spreaker/prometheus-aws-guardduty-exporter:latest
    ```
 
 5. Push image to `Public ECR`
    ```
    docker push public.ecr.aws/spreaker/prometheus-aws-guardduty-exporter:REPLACE-VERSION
+
+   docker push public.ecr.aws/spreaker/prometheus-aws-guardduty-exporter:latest
    ```
